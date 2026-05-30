@@ -35,9 +35,13 @@
     font-size:15px; font-weight:700;
   }
   .week.active{background:var(--ink); color:#fff; border-color:var(--ink)}
+  /* ---- mode toggle ---- */
+  .modes{display:flex; gap:6px; padding:10px 18px 2px}
+  .mode{flex:1; border:1.5px solid var(--line); background:#fff; color:var(--muted);
+        border-radius:12px; padding:10px; font-size:15px; font-weight:800}
+  .mode.active{background:var(--amber-soft); border-color:var(--amber); color:#7a5c00}
   /* ---- meal tabs ---- */
-  .tabs{display:flex; gap:6px; padding:8px 18px 4px; position:sticky; top:84px; z-index:15;
-        background:linear-gradient(var(--bg),var(--bg) 70%,transparent); overflow-x:auto}
+  .tabs{display:flex; gap:6px; padding:8px 18px 4px; overflow-x:auto}
   .tab{flex:0 0 auto; border:none; background:transparent; font-size:15px; font-weight:700;
        color:var(--muted); padding:8px 6px; border-bottom:3px solid transparent}
   .tab.active{color:var(--ink); border-color:var(--amber)}
@@ -59,6 +63,23 @@
   .card .meta{font-size:13px; color:var(--muted); margin-top:4px}
   .chev{color:var(--amber); font-size:26px; font-weight:700; flex:0 0 auto}
   .hint{color:var(--muted); font-size:13px; padding:4px 4px 12px; text-align:center}
+  /* ---- shopping / compras ---- */
+  .shop-head{display:flex; align-items:center; justify-content:space-between; padding:6px 4px 2px}
+  .shop-prog{font-size:14px; color:var(--muted); font-weight:600}
+  .resetbtn{background:none; border:1.5px solid var(--line); color:var(--muted);
+            border-radius:999px; padding:6px 14px; font-size:13px; font-weight:700}
+  .cat{font-size:13px; font-weight:800; letter-spacing:.1em; text-transform:uppercase;
+       color:#b08a00; margin:20px 4px 4px}
+  ul.ing{list-style:none; margin:0; padding:0}
+  ul.ing li{display:flex; gap:12px; align-items:flex-start; padding:11px 2px; border-bottom:1px solid var(--line); font-size:17px}
+  ul.ing li .box{flex:0 0 auto; width:24px; height:24px; border:2px solid var(--amber); border-radius:7px; margin-top:1px;
+                 display:flex; align-items:center; justify-content:center; color:#fff; font-size:15px; font-weight:800}
+  ul.ing li.done .box{background:var(--green); border-color:var(--green)}
+  ul.ing li.done span{color:var(--muted); text-decoration:line-through}
+  .prep-card{background:var(--amber-soft); border:1px solid var(--amber); border-radius:14px; padding:6px 14px 10px; margin-top:8px}
+  .pantry-note{font-size:13px; color:var(--muted); padding:2px 4px 0}
+  .chips{display:flex; flex-wrap:wrap; gap:8px; padding:8px 2px 4px}
+  .chip{background:#fff; border:1px solid var(--line); border-radius:999px; padding:7px 12px; font-size:13px; color:var(--ink)}
   /* ---- recipe detail (full screen) ---- */
   .sheet{position:fixed; inset:0; z-index:50; background:var(--bg); overflow-y:auto;
          transform:translateY(100%); transition:transform .28s ease; display:flex; flex-direction:column}
@@ -69,19 +90,11 @@
   .scroll{flex:1; overflow-y:auto; padding:18px 18px 60px}
   .section-title{font-size:13px; font-weight:800; letter-spacing:.12em; text-transform:uppercase;
                  color:#b08a00; margin:22px 0 10px}
-  ul.ing{list-style:none; margin:0; padding:0}
-  ul.ing li{display:flex; gap:12px; align-items:flex-start; padding:11px 0; border-bottom:1px solid var(--line); font-size:17px}
-  ul.ing li .box{flex:0 0 auto; width:24px; height:24px; border:2px solid var(--amber); border-radius:7px; margin-top:1px;
-                 display:flex; align-items:center; justify-content:center; color:#fff; font-size:15px; font-weight:800}
-  ul.ing li.done .box{background:var(--green); border-color:var(--green)}
-  ul.ing li.done span{color:var(--muted); text-decoration:line-through}
   ol.steps{margin:0; padding:0; counter-reset:s; list-style:none}
   ol.steps li{position:relative; padding:14px 0 14px 44px; font-size:17px; border-bottom:1px solid var(--line)}
   ol.steps li:before{counter-increment:s; content:counter(s); position:absolute; left:0; top:12px;
                      width:30px; height:30px; background:var(--amber); color:#3a2c00; font-weight:800;
                      border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:15px}
-  .cookbtn{display:block; width:100%; margin:8px 0 0; background:var(--ink); color:#fff; border:none;
-           padding:16px; border-radius:14px; font-size:17px; font-weight:700}
 </style>
 </head>
 <body>
@@ -91,9 +104,10 @@
 </header>
 
 <div class="weeks" id="weeks"></div>
+<div class="modes" id="modes"></div>
 <div class="tabs" id="tabs"></div>
 <main id="list"></main>
-<div class="hint">Prototipo · Semana 1 completa, Semana 2 parcial</div>
+<div class="hint" id="hint"></div>
 
 <!-- Recipe detail sheet -->
 <div class="sheet" id="sheet">
@@ -114,38 +128,114 @@
 <script>
   const P = window.PLAN;
   const MEALS = ["Desayuno","Comida","Cena","Snacks"];
-  let curWeek = 0, curMeal = "Desayuno";
+  let curWeek = 0, curMeal = "Desayuno", curMode = "menu";
 
   const $ = s => document.querySelector(s);
   const checks = JSON.parse(localStorage.getItem("bal_checks")||"{}");
   const saveChecks = () => localStorage.setItem("bal_checks", JSON.stringify(checks));
+  const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+
+  const tagLabel = {vegano:"🌱 Vegano", vegetariano:"Vegetariano", "1xsemana":"1× por semana"};
+  const tagClass = {vegano:"vegano", vegetariano:"vegetariano", "1xsemana":"uno"};
 
   function renderWeeks(){
     $("#weeks").innerHTML = P.semanas.map((s,i)=>
       `<button class="week ${i===curWeek?'active':''}" onclick="setWeek(${i})">Semana ${s.n}</button>`).join("");
   }
+  function renderModes(){
+    const opts = [["menu","🍽 Menú"],["compras","🛒 Compras"]];
+    $("#modes").innerHTML = opts.map(([m,l])=>
+      `<button class="mode ${m===curMode?'active':''}" onclick="setMode('${m}')">${l}</button>`).join("");
+  }
   function renderTabs(){
+    if(curMode!=="menu"){ $("#tabs").innerHTML=""; return; }
     const meals = P.semanas[curWeek].comidas;
     $("#tabs").innerHTML = MEALS.filter(m=>meals[m]).map(m=>
       `<button class="tab ${m===curMeal?'active':''}" onclick="setMeal('${m}')">${m}</button>`).join("");
   }
-  const tagLabel = {vegano:"🌱 Vegano", vegetariano:"Vegetariano", "1xsemana":"1× por semana"};
-  const tagClass = {vegano:"vegano", vegetariano:"vegetariano", "1xsemana":"uno"};
+
+  function render(){
+    renderTabs();
+    if(curMode==="menu"){ $("#day-greet").textContent="¿Qué cocinas hoy?"; renderList(); }
+    else { $("#day-greet").textContent="Lista de súper"; renderShop(); }
+  }
 
   function renderList(){
     const recetas = (P.semanas[curWeek].comidas[curMeal]||[]);
     $("#list").innerHTML = recetas.map((r,i)=>`
       <div class="card" onclick="openRecipe(${i})">
         <div class="body">
-          <h3>${r.nombre}</h3>
+          <h3>${esc(r.nombre)}</h3>
           <div class="tags">${(r.etiquetas||[]).map(t=>`<span class="tag ${tagClass[t]}">${tagLabel[t]}</span>`).join("")}</div>
           <div class="meta">${r.ingredientes.length} ingredientes · ${r.pasos.length} pasos</div>
         </div>
         <div class="chev">›</div>
       </div>`).join("");
+    $("#hint").textContent = "Toca un platillo para ver ingredientes y preparación";
   }
-  window.setWeek = i => { curWeek=i; renderWeeks(); renderTabs(); renderList(); };
+
+  function shopKey(cat,j){ return `super|${curWeek}|${cat}|${j}`; }
+
+  function renderShop(){
+    const sem = P.semanas[curWeek];
+    const lista = sem.listaSuper || {};
+    let total=0, done=0;
+    let html = "";
+
+    // progreso + reset
+    Object.entries(lista).forEach(([cat,items])=>{
+      items.forEach((_,j)=>{ total++; if(checks[shopKey(cat,j)]) done++; });
+    });
+    html += `<div class="shop-head">
+      <span class="shop-prog">Semana ${sem.n} · ${done}/${total} marcados</span>
+      <button class="resetbtn" onclick="resetShop()">Reiniciar</button></div>`;
+
+    // categorías
+    Object.entries(lista).forEach(([cat,items])=>{
+      html += `<div class="cat">${esc(cat)}</div><ul class="ing">`;
+      items.forEach((item,j)=>{
+        const k = shopKey(cat,j), d = checks[k];
+        html += `<li class="${d?'done':''}" onclick="toggleShop('${cat.replace(/'/g,"\\'")}',${j},this)">
+          <span class="box">${d?'✓':''}</span><span>${esc(item)}</span></li>`;
+      });
+      html += `</ul>`;
+    });
+
+    // meal prep
+    if(P.mealPrep && P.mealPrep.length){
+      html += `<div class="cat">Meal prep del domingo</div><div class="prep-card"><ol class="steps">`;
+      html += P.mealPrep.map(s=>`<li>${esc(s)}</li>`).join("");
+      html += `</ol></div>`;
+    }
+
+    // básicos de despensa
+    if(P.pantryStaples && P.pantryStaples.length){
+      html += `<div class="cat">Básicos de despensa</div>
+        <div class="pantry-note">Para todas las semanas (revisa que no se acaben):</div>
+        <div class="chips">${P.pantryStaples.map(s=>`<span class="chip">${esc(s)}</span>`).join("")}</div>`;
+    }
+
+    $("#list").innerHTML = html;
+    $("#hint").textContent = "Marca lo que vayas echando al carrito";
+  }
+
+  window.setWeek = i => { curWeek=i; renderWeeks(); render(); };
+  window.setMode = m => { curMode=m; renderModes(); render(); window.scrollTo(0,0); };
   window.setMeal = m => { curMeal=m; renderTabs(); renderList(); };
+
+  window.toggleShop = (cat,j,el)=>{
+    const k = shopKey(cat,j); checks[k]=!checks[k]; saveChecks();
+    el.classList.toggle("done", checks[k]);
+    el.querySelector(".box").textContent = checks[k]?'✓':'';
+    const p = $(".shop-prog");
+    if(p){ const m=p.textContent.match(/(\d+)\/(\d+)/); if(m){ let d=+m[1]+(checks[k]?1:-1);
+      p.textContent = `Semana ${P.semanas[curWeek].n} · ${d}/${m[2]} marcados`; } }
+  };
+  window.resetShop = ()=>{
+    const lista = P.semanas[curWeek].listaSuper || {};
+    Object.entries(lista).forEach(([cat,items])=> items.forEach((_,j)=> delete checks[shopKey(cat,j)]));
+    saveChecks(); renderShop();
+  };
 
   window.openRecipe = i => {
     const r = P.semanas[curWeek].comidas[curMeal][i];
@@ -155,9 +245,9 @@
     $("#r-ing").innerHTML = r.ingredientes.map((ing,j)=>{
       const done = checks[`${key}|${j}`];
       return `<li class="${done?'done':''}" onclick="toggleIng('${key}',${j},this)">
-        <span class="box">${done?'✓':''}</span><span>${ing}</span></li>`;
+        <span class="box">${done?'✓':''}</span><span>${esc(ing)}</span></li>`;
     }).join("");
-    $("#r-steps").innerHTML = r.pasos.map(p=>`<li>${p}</li>`).join("");
+    $("#r-steps").innerHTML = r.pasos.map(p=>`<li>${esc(p)}</li>`).join("");
     $("#sheet").classList.add("open");
   };
   window.toggleIng = (key,j,el)=>{
@@ -167,7 +257,7 @@
   };
   $("#back").onclick = ()=> $("#sheet").classList.remove("open");
 
-  renderWeeks(); renderTabs(); renderList();
+  renderWeeks(); renderModes(); render();
 </script>
 </body>
 </html>
