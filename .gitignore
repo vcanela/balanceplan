@@ -1,0 +1,8 @@
+# PDFs originales (material de pago de Gary Díaz Nutrición — no publicar)
+*.pdf
+
+# Config local del entorno de desarrollo
+.claude/
+
+# macOS
+.DS_Store
