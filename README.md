@@ -11,19 +11,23 @@ Queda como un ícono y abre a pantalla completa, igual que una app.
 
 ## Características
 
-- Menú flexible por semana → Desayuno · Comida · Cena · Snacks.
+- **Menú** flexible por semana → Desayuno · Comida · Cena · Snacks (4 semanas, 64 recetas).
 - Ficha de receta con **ingredientes como checklist** (marca lo que ya tienes) y
   **pasos numerados** con letra grande.
-- El estado del checklist se guarda localmente en el navegador.
+- **Compras**: lista de súper por semana agrupada por categoría con casillas y
+  contador de progreso, más el checklist de **meal prep del domingo** y los
+  básicos de despensa.
+- Todo el estado de las casillas se guarda localmente en el navegador.
 
 ## Estructura
 
 - `index.html` — toda la interfaz (HTML + CSS + JS, sin dependencias).
-- `data.js` — los datos del plan (semanas → comidas → recetas).
+- `data.js` — los datos del plan (semanas → comidas, listas de súper, meal prep).
 
 ## Estado
 
-Prototipo. Semana 1 transcrita completa; Semana 2 parcial.
+Las 4 semanas de menús están completas, junto con sus listas de súper.
+Falta validar la transcripción contra el PDF original.
 
 ## Notas
 
