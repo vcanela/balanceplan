@@ -21,12 +21,11 @@
   /* ---- top bar ---- */
   header{
     position:sticky; top:0; z-index:20; background:var(--amber);
-    padding:14px 18px calc(14px); padding-top:max(14px,env(safe-area-inset-top));
+    padding:16px 18px 14px; padding-top:max(16px,env(safe-area-inset-top));
     box-shadow:0 2px 8px rgba(0,0,0,.08);
   }
   .brand{font-weight:800; font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:#7a5c00}
-  .brand small{font-weight:600; opacity:.7}
-  h1{margin:2px 0 0; font-size:24px; font-weight:800; color:#3a2c00}
+  h1{margin:3px 0 0; font-size:24px; font-weight:800; color:#3a2c00}
   /* ---- week pills ---- */
   .weeks{display:flex; gap:8px; padding:14px 18px 4px; overflow-x:auto}
   .week{
@@ -40,16 +39,18 @@
   .mode{flex:1; border:1.5px solid var(--line); background:#fff; color:var(--muted);
         border-radius:12px; padding:10px; font-size:15px; font-weight:800}
   .mode.active{background:var(--amber-soft); border-color:var(--amber); color:#7a5c00}
-  /* ---- meal tabs ---- */
-  .tabs{display:flex; gap:6px; padding:8px 18px 4px; overflow-x:auto}
-  .tab{flex:0 0 auto; border:none; background:transparent; font-size:15px; font-weight:700;
-       color:var(--muted); padding:8px 6px; border-bottom:3px solid transparent}
-  .tab.active{color:var(--ink); border-color:var(--amber)}
-  /* ---- recipe cards ---- */
+  /* ---- day tabs ---- */
+  .tabs{display:flex; gap:6px; padding:10px 18px 4px; overflow-x:auto}
+  .tab{flex:0 0 auto; border:none; background:#fff; border:1.5px solid var(--line);
+       font-size:15px; font-weight:700; color:var(--muted); padding:8px 16px; border-radius:999px}
+  .tab.active{color:#3a2c00; border-color:var(--amber); background:var(--amber-soft)}
+  /* ---- cards ---- */
   main{padding:8px 14px 40px}
+  .meal-label{font-size:13px; font-weight:800; letter-spacing:.1em; text-transform:uppercase;
+              color:#b08a00; margin:18px 4px 2px}
   .card{
     background:var(--card); border:1px solid var(--line); border-radius:16px;
-    padding:16px 16px; margin:10px 0; box-shadow:0 1px 3px rgba(120,90,0,.05);
+    padding:16px 16px; margin:6px 0 0; box-shadow:0 1px 3px rgba(120,90,0,.05);
     display:flex; align-items:center; gap:12px;
   }
   .card:active{transform:scale(.99)}
@@ -99,7 +100,7 @@
 </head>
 <body>
 <header>
-  <div class="brand">Proyecto Balance · <small>Gary Díaz Nutrición</small></div>
+  <div class="brand">Proyecto Balance</div>
   <h1 id="day-greet">¿Qué cocinas hoy?</h1>
 </header>
 
@@ -128,7 +129,8 @@
 <script>
   const P = window.PLAN;
   const MEALS = ["Desayuno","Comida","Cena","Snacks"];
-  let curWeek = 0, curMeal = "Desayuno", curMode = "menu";
+  const MEAL_LABEL = {Desayuno:"Desayuno", Comida:"Comida", Cena:"Cena", Snacks:"Snack"};
+  let curWeek = 0, curDay = 0, curMode = "menu";
 
   const $ = s => document.querySelector(s);
   const checks = JSON.parse(localStorage.getItem("bal_checks")||"{}");
@@ -147,50 +149,60 @@
     $("#modes").innerHTML = opts.map(([m,l])=>
       `<button class="mode ${m===curMode?'active':''}" onclick="setMode('${m}')">${l}</button>`).join("");
   }
-  function renderTabs(){
+  function renderDayTabs(){
     if(curMode!=="menu"){ $("#tabs").innerHTML=""; return; }
-    const meals = P.semanas[curWeek].comidas;
-    $("#tabs").innerHTML = MEALS.filter(m=>meals[m]).map(m=>
-      `<button class="tab ${m===curMeal?'active':''}" onclick="setMeal('${m}')">${m}</button>`).join("");
+    const dias = P.semanas[curWeek].dias || [];
+    $("#tabs").innerHTML = dias.map((_,i)=>
+      `<button class="tab ${i===curDay?'active':''}" onclick="setDay(${i})">Día ${i+1}</button>`).join("");
   }
 
   function render(){
-    renderTabs();
-    if(curMode==="menu"){ $("#day-greet").textContent="¿Qué cocinas hoy?"; renderList(); }
+    renderDayTabs();
+    if(curMode==="menu"){ $("#day-greet").textContent="¿Qué cocinas hoy?"; renderDay(); }
     else { $("#day-greet").textContent="Lista de súper"; renderShop(); }
   }
 
-  function renderList(){
-    const recetas = (P.semanas[curWeek].comidas[curMeal]||[]);
-    $("#list").innerHTML = recetas.map((r,i)=>`
-      <div class="card" onclick="openRecipe(${i})">
+  function recipeCard(meal, idx){
+    const r = P.semanas[curWeek].comidas[meal][idx];
+    if(!r) return "";
+    return `<div class="meal-label">${MEAL_LABEL[meal]}</div>
+      <div class="card" onclick="openRecipe('${meal}',${idx})">
         <div class="body">
           <h3>${esc(r.nombre)}</h3>
           <div class="tags">${(r.etiquetas||[]).map(t=>`<span class="tag ${tagClass[t]}">${tagLabel[t]}</span>`).join("")}</div>
           <div class="meta">${r.ingredientes.length} ingredientes · ${r.pasos.length} pasos</div>
         </div>
         <div class="chev">›</div>
-      </div>`).join("");
-    $("#hint").textContent = "Toca un platillo para ver ingredientes y preparación";
+      </div>`;
+  }
+
+  function renderDay(){
+    const sem = P.semanas[curWeek];
+    const dia = (sem.dias||[])[curDay] || {};
+    let html = MEALS.filter(m=>dia[m]!=null).map(m=>recipeCard(m, dia[m])).join("");
+
+    // otras opciones de la semana (recetas no asignadas a ningún día)
+    const used = {}; MEALS.forEach(m=>used[m]=new Set());
+    (sem.dias||[]).forEach(d=> MEALS.forEach(m=>{ if(d[m]!=null) used[m].add(d[m]); }));
+    let extras = "";
+    MEALS.forEach(m=>{
+      (sem.comidas[m]||[]).forEach((_,i)=>{ if(!used[m].has(i)) extras += recipeCard(m, i); });
+    });
+    if(extras){ html += `<div class="cat" style="margin-top:26px">Otras opciones de la semana</div>` + extras; }
+
+    $("#list").innerHTML = html;
+    $("#hint").textContent = "El menú completo del día. Toca un platillo para ver la receta.";
   }
 
   function shopKey(cat,j){ return `super|${curWeek}|${cat}|${j}`; }
-
   function renderShop(){
     const sem = P.semanas[curWeek];
     const lista = sem.listaSuper || {};
-    let total=0, done=0;
-    let html = "";
-
-    // progreso + reset
-    Object.entries(lista).forEach(([cat,items])=>{
-      items.forEach((_,j)=>{ total++; if(checks[shopKey(cat,j)]) done++; });
-    });
+    let total=0, done=0, html="";
+    Object.entries(lista).forEach(([cat,items])=> items.forEach((_,j)=>{ total++; if(checks[shopKey(cat,j)]) done++; }));
     html += `<div class="shop-head">
       <span class="shop-prog">Semana ${sem.n} · ${done}/${total} marcados</span>
       <button class="resetbtn" onclick="resetShop()">Reiniciar</button></div>`;
-
-    // categorías
     Object.entries(lista).forEach(([cat,items])=>{
       html += `<div class="cat">${esc(cat)}</div><ul class="ing">`;
       items.forEach((item,j)=>{
@@ -200,28 +212,22 @@
       });
       html += `</ul>`;
     });
-
-    // meal prep
     if(P.mealPrep && P.mealPrep.length){
       html += `<div class="cat">Meal prep del domingo</div><div class="prep-card"><ol class="steps">`;
-      html += P.mealPrep.map(s=>`<li>${esc(s)}</li>`).join("");
-      html += `</ol></div>`;
+      html += P.mealPrep.map(s=>`<li>${esc(s)}</li>`).join("") + `</ol></div>`;
     }
-
-    // básicos de despensa
     if(P.pantryStaples && P.pantryStaples.length){
       html += `<div class="cat">Básicos de despensa</div>
         <div class="pantry-note">Para todas las semanas (revisa que no se acaben):</div>
         <div class="chips">${P.pantryStaples.map(s=>`<span class="chip">${esc(s)}</span>`).join("")}</div>`;
     }
-
     $("#list").innerHTML = html;
     $("#hint").textContent = "Marca lo que vayas echando al carrito";
   }
 
-  window.setWeek = i => { curWeek=i; renderWeeks(); render(); };
+  window.setWeek = i => { curWeek=i; curDay=0; renderWeeks(); render(); window.scrollTo(0,0); };
   window.setMode = m => { curMode=m; renderModes(); render(); window.scrollTo(0,0); };
-  window.setMeal = m => { curMeal=m; renderTabs(); renderList(); };
+  window.setDay  = i => { curDay=i; renderDayTabs(); renderDay(); window.scrollTo(0,0); };
 
   window.toggleShop = (cat,j,el)=>{
     const k = shopKey(cat,j); checks[k]=!checks[k]; saveChecks();
@@ -237,9 +243,9 @@
     saveChecks(); renderShop();
   };
 
-  window.openRecipe = i => {
-    const r = P.semanas[curWeek].comidas[curMeal][i];
-    const key = `${curWeek}|${curMeal}|${i}`;
+  window.openRecipe = (meal, idx) => {
+    const r = P.semanas[curWeek].comidas[meal][idx];
+    const key = `${curWeek}|${meal}|${idx}`;
     $("#r-name").textContent = r.nombre;
     $("#r-tags").innerHTML = (r.etiquetas||[]).map(t=>`<span class="tag ${tagClass[t]}">${tagLabel[t]}</span>`).join("");
     $("#r-ing").innerHTML = r.ingredientes.map((ing,j)=>{

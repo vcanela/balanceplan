@@ -29,6 +29,12 @@ window.PLAN = {
   "semanas": [
     {
       "n": 1,
+      "dias": [
+        {"Desayuno": 0, "Comida": 0, "Cena": 0, "Snacks": 0},
+        {"Desayuno": 1, "Comida": 1, "Cena": 1, "Snacks": 1},
+        {"Desayuno": 2, "Comida": 2, "Cena": 2, "Snacks": 0},
+        {"Desayuno": 3, "Comida": 3, "Cena": 3, "Snacks": 2}
+      ],
       "comidas": {
         "Desayuno": [
           {
@@ -317,6 +323,12 @@ window.PLAN = {
     },
     {
       "n": 2,
+      "dias": [
+        {"Desayuno": 0, "Comida": 0, "Cena": 0, "Snacks": 0},
+        {"Desayuno": 1, "Comida": 1, "Cena": 1, "Snacks": 1},
+        {"Desayuno": 2, "Comida": 2, "Cena": 2, "Snacks": 2},
+        {"Desayuno": 3, "Comida": 3, "Cena": 3, "Snacks": 3}
+      ],
       "comidas": {
         "Desayuno": [
           {
@@ -647,6 +659,12 @@ window.PLAN = {
     },
     {
       "n": 3,
+      "dias": [
+        {"Desayuno": 0, "Comida": 0, "Cena": 0, "Snacks": 0},
+        {"Desayuno": 1, "Comida": 1, "Cena": 1, "Snacks": 1},
+        {"Desayuno": 2, "Comida": 2, "Cena": 2, "Snacks": 2},
+        {"Desayuno": 3, "Comida": 3, "Cena": 3, "Snacks": 3}
+      ],
       "comidas": {
         "Desayuno": [
           {
@@ -956,6 +974,12 @@ window.PLAN = {
     },
     {
       "n": 4,
+      "dias": [
+        {"Desayuno": 0, "Comida": 0, "Cena": 0, "Snacks": 0},
+        {"Desayuno": 1, "Comida": 1, "Cena": 1, "Snacks": 1},
+        {"Desayuno": 3, "Comida": 2, "Cena": 2, "Snacks": 2},
+        {"Desayuno": 4, "Comida": 3, "Cena": 3, "Snacks": 3}
+      ],
       "comidas": {
         "Desayuno": [
           {
